@@ -8,8 +8,15 @@ from pycoq.serapi.parser import *
 class CoqWorker:
     def __init__(self):
         serapi_addr = get_serapi_addr()
+        coq_addr = get_coq_addr()
+
+        if coq_addr is not None:
+            invoked_cmd = "%s --prelude %s" % (serapi_addr, coq_addr)
+        else:
+            invoked_cmd = serapi_addr
+
         self.subprocess = Popen(
-            [serapi_addr],
+            [invoked_cmd],
             stdin=PIPE,
             stdout=PIPE,
             stderr=PIPE,
@@ -19,7 +26,7 @@ class CoqWorker:
         self.cmd_counter = 0
         self.max_exec_stateid = 0
 
-        logger.info("CoqWorker successfully started.")
+        logger.info("CoqWorker successfully started by: %s" % invoked_cmd)
 
     def __del__(self):
         if self.quit() is None:
@@ -35,8 +42,12 @@ class CoqWorker:
         cmd = "(%d %s)" % (self.cmd_counter, cmd)
         self.cmd_counter += 1
 
+        # debug flag
+        raw_send_flag, raw_receive_flag = get_raw_send_receive_debug()
+
         # write command
-        logger.debug("<<< " + cmd)
+        if raw_send_flag:
+            logger.debug("<<< " + cmd)
         self.subprocess.stdin.write((cmd + "\n").encode(encoding="utf-8"))
         self.subprocess.stdin.flush()
 
@@ -45,18 +56,20 @@ class CoqWorker:
         # read response
         while self.subprocess.poll() is None:
             line = self.subprocess.stdout.readline().strip().decode(encoding="utf-8")
-            logger.debug(">>> " + line)
+            if raw_receive_flag:
+                logger.debug(">>> " + line)
+
             resp = parse_response(get_tuple(line))
 
             if isinstance(resp, SerFeedBack):
                 pass
             elif isinstance(resp, SerAnswer):
-                if isinstance(resp.answered_kind, SerAnswerAck):
+                if isinstance(resp, SerAnswerAck):
                     pass
-                elif isinstance(resp.answered_kind, SerAnswerCompleted):
+                elif isinstance(resp, SerAnswerCompleted):
                     # loop terminated when execution is finished
                     break
-                elif isinstance(resp.answered_kind, SerAnswerException):
+                elif isinstance(resp, SerAnswerException):
                     # terminated abnormally
                     answer = resp
                     break
@@ -78,15 +91,24 @@ class CoqWorker:
 
         # FIXME
         result = self.execute_cmd("(Add () \"%s\")" % add_str)
-        if isinstance(result.answered_kind, SerAnswerAdded):
-            return result.answered_kind.stateid
+        if result is None:
+            return None
+
+        if isinstance(result, SerAnswerAdded):
+            return result.state_id
         else:
             raise PyCoqException("ADD", "unknown result %s" % type(result))
 
     def add_and_execute_raw(self, add_str, add_opts={}):
-        stateid = self.add_raw(add_str, add_opts)
-        self.exec(stateid)
-        return stateid
+        state_id = self.add_raw(add_str, add_opts)
+
+        if state_id is not None:
+            exec_result = self.exec(state_id)
+            if isinstance(exec_result, SerAnswerException):
+                logger.error("@@@ " + add_str)
+                raise PyCoqException("Coq", "Runtime exception occurred in Coq.")
+
+        return state_id
 
     def exec(self, stateid):
         result = self.execute_cmd("(Exec %d)" % stateid)
@@ -94,9 +116,8 @@ class CoqWorker:
             # that is normal
             return
         # otherwise something must be wrong
-        if isinstance(result.answered_kind, SerAnswerException):
-            # TODO
-            raise PyCoqException("Coq", "TODO Coq Runtime Exception")
+        if isinstance(result, SerAnswerException):
+            return result
 
     def query_goals(self, stateid=None):
         if stateid is None:

@@ -1,9 +1,11 @@
 (*==========timed data stream========*)
-Require Import Reals.
-Require Import Arith.
-Require Import List.
-Require Import Streams.
+From Coq Require Import Arith.
+From Coq Require Import List.
+From Coq Require Import Reals.
+From Coq Require Import Streams.
+
 Open Scope type_scope.
+
 Definition Time:=R.
 Definition Data:=nat.
 Definition TD:=Time*Data.
@@ -40,7 +42,6 @@ Definition Deq(s1 s2:Stream TD) : Prop :=
   forall n:nat, PrR(Str_nth n s1) = PrR(Str_nth n s2).
 
 
-
 (*===========basic channel==========*)
 Definition Sync (Input Output:Stream TD) : Prop:=
    (Teq Input Output)  /\  (Deq Input Output).
@@ -48,12 +49,7 @@ Definition Sync (Input Output:Stream TD) : Prop:=
 Definition SyncDrain (Input1 Input2:Stream TD) : Prop:=
    (Teq Input1 Input2).
 
-Definition FIFO1(Input Output:Stream TD) : Prop:=
-  (Tle Input Output)
-  /\
-  (Tle Output (tl Input))
-  /\
-  (Deq Input Output).
+Definition FIFO1(Input Output:Stream TD) : Prop:= ((Tle Input Output) /\ (Tle Output (tl Input)) /\ (Deq Input Output)).
 
 Definition FIFO1e(Input Output :Stream TD)(e:Data):=
   (Tgt Input Output)
@@ -384,4 +380,4 @@ rewrite H1.
 rewrite H2.
 admit.
 assumption.
-Qed.
+Admitted.
