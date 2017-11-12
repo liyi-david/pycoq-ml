@@ -1,3 +1,6 @@
+# TODO from coq object to string (especially, should be able sent directly into coq)
+
+
 def coq_obj_parse(obj_tuple):
     if obj_tuple[0] == 'CoqGoal':
         return CoqGoal(obj_tuple)
@@ -38,7 +41,6 @@ class CoqGoalSingle:
 class CoqHypothesis:
     def __init__(self, obj_tuple):
         self.ids = list(map(lambda idv: idv[0], obj_tuple[0]))
-        assert len(self.ids) == 1
         # FIXME parse the options
         self.options = obj_tuple[1]
         self.term = CoqTerm.parse(obj_tuple[2])
@@ -81,8 +83,64 @@ class CoqTermProd(CoqTerm):
     identifier = "Prod"
 
     def __init__(self, obj_tuple):
+        if obj_tuple[1] == 'Anonymous':
+            self.var_quantified = None
+        elif obj_tuple[1][0] == 'Name':
+            self.var_quantified = CoqTerm.parse(obj_tuple[1][1])
+        else:
+            raise Exception("unrecognized prod quantified variable %s" % obj_tuple[1])
+
+        self.type_quantified = CoqTerm.parse(obj_tuple[2])
+        self.term = CoqTerm.parse(obj_tuple[3])
+
+        # print(self)
+        CoqTerm.__init__(self, obj_tuple)
+
+    def __str__(self):
+        return "forall (%s: %s), %s" % (
+            "_" if self.var_quantified is None else self.var_quantified,
+            self.type_quantified,
+            self.term
+        )
+
+
+class CoqTermInd(CoqTerm):
+    identifier = "Ind"
+
+    def __init__(self, obj_tuple):
+        # print(obj_tuple)
+        # FIXME other information
+        self.term = CoqTerm.parse(obj_tuple[1][0][0][3])
+        CoqTerm.__init__(self, obj_tuple)
+
+
+class CoqTermSort(CoqTerm):
+    identifier = "Sort"
+
+    def __init__(self, obj_tuple):
         print(obj_tuple)
-        # FIXME self.name = obj_tuple[1]
-        self.left = CoqTerm.parse(obj_tuple[2])
-        self.right = CoqTerm.parse(obj_tuple[3])
+        CoqTerm.__init__(self, obj_tuple)
+
+
+class CoqTermRel(CoqTerm):
+    identifier = "Rel"
+
+    def __init__(self, obj_tuple):
+        self.value = obj_tuple[1]
+        CoqTerm.__init__(self, obj_tuple)
+
+
+class CoqTermVar(CoqTerm):
+    identifier = "Var"
+
+    def __init__(self, obj_tuple):
+        self.id = CoqTerm.parse(obj_tuple[1])
+        CoqTerm.__init__(self, obj_tuple)
+
+
+class CoqTermApp(CoqTerm):
+    identifier = "App"
+
+    def __init__(self, obj_tuple):
+        # TODO
         CoqTerm.__init__(self, obj_tuple)
