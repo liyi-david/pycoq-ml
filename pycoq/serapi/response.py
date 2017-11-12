@@ -1,3 +1,5 @@
+from pycoq.serapi.coqobj import coq_obj_parse
+
 def parse_response(resp_tuple):
     if len(resp_tuple) == 0:
         return None
@@ -34,6 +36,8 @@ def parse_answer_kind(kind_tuple):
             return SerAnswerAdded(kind_tuple)
         elif kind_tuple[0] == 'CoqExn':
             return SerAnswerException(kind_tuple)
+        elif kind_tuple[0] == 'ObjList':
+            return SerAnswerObjList(kind_tuple)
 
     raise Exception("unhandled answer_kind %s" % (kind_tuple))
 
@@ -55,3 +59,10 @@ class SerAnswerAdded:
 class SerAnswerException:
     def __init__(self, tuple):
         pass
+
+
+class SerAnswerObjList:
+    def __init__(self, tuple):
+        self.objs = []
+        for obj in tuple[1]:
+            self.objs.append(coq_obj_parse(obj))

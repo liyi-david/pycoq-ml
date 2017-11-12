@@ -70,13 +70,6 @@ class CoqWorker:
             else:
                 raise PyCoqException("CoqWorker", "unknown response type")
 
-        # update state id if needed
-        if isinstance(answer, SerAnswerAdded):
-            pass
-        else:
-            # do not need to update
-            pass
-
         return answer
 
     def add_raw(self, add_str, add_opts={}):
