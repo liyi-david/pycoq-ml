@@ -89,6 +89,9 @@ class CoqWorker:
         assert isinstance(add_opts, dict)
         assert isinstance(add_str, str)
 
+        # PATCHES
+        add_str = add_str.strip().replace("Require Import", "From Coq Require Import")
+
         # FIXME
         result = self.execute_cmd("(Add () \"%s\")" % add_str)
         if result is None:
@@ -114,6 +117,7 @@ class CoqWorker:
         result = self.execute_cmd("(Exec %d)" % stateid)
         if result is None:
             # that is normal
+            self.max_exec_stateid = stateid
             return
         # otherwise something must be wrong
         if isinstance(result, SerAnswerException):
@@ -124,7 +128,13 @@ class CoqWorker:
             stateid = self.max_exec_stateid
         elif stateid > self.max_exec_stateid:
             self.exec(stateid)
-        return self.execute_cmd("(Query ((sid %d)) Goals)" % (stateid))
+
+        result = self.execute_cmd("(Query ((sid %d)) Goals)" % (stateid))
+
+        if isinstance(result, SerAnswerObjList):
+            return result.objects
+        else:
+            raise PyCoqException("Coq", "Query does not return object list.")
 
     def quit(self):
         return self.execute_cmd("Quit")
