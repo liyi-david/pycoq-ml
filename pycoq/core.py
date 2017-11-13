@@ -51,7 +51,7 @@ class CoqWorker:
         self.subprocess.stdin.write((cmd + "\n").encode(encoding="utf-8"))
         self.subprocess.stdin.flush()
 
-        answer = None
+        answer = []
 
         # read response
         while self.subprocess.poll() is None:
@@ -71,13 +71,10 @@ class CoqWorker:
                     break
                 elif isinstance(resp, SerAnswerException):
                     # terminated abnormally
-                    answer = resp
+                    answer.append(resp)
                     break
                 else:
-                    if answer is not None:
-                        logger.error("answer is assigned dumplicatedly")
-
-                    answer = resp
+                    answer.append(resp)
             elif resp is None:
                 pass
             else:
@@ -89,29 +86,43 @@ class CoqWorker:
         assert isinstance(add_opts, dict)
         assert isinstance(add_str, str)
 
+        state_ids = []
+
         # PATCHES
-        add_str = add_str.strip().replace("Require Import", "From Coq Require Import")
+        # if add_str.strip().startswith("Require"):
+        #     add_str = add_str.strip().replace("Require", "From Coq Require")
+
+        if '\"' in add_str:
+            add_str = add_str.replace('"', '\\"')
 
         # FIXME
         result = self.execute_cmd("(Add () \"%s\")" % add_str)
         if result is None:
             return None
 
-        if isinstance(result, SerAnswerAdded):
-            return result.state_id
+        if isinstance(result, list):
+            for answer in result:
+                if isinstance(answer, SerAnswerAdded):
+                    state_ids.append(answer.state_id)
+                elif isinstance(answer, SerAnswerException):
+                    raise PyCoqException("ADD", "fail to add coq item.")
         else:
             raise PyCoqException("ADD", "unknown result %s" % type(result))
 
+        return state_ids
+
     def add_and_execute_raw(self, add_str, add_opts={}):
-        state_id = self.add_raw(add_str, add_opts)
+        state_ids = self.add_raw(add_str, add_opts)
 
-        if state_id is not None:
-            exec_result = self.exec(state_id)
-            if isinstance(exec_result, SerAnswerException):
-                logger.error("@@@ " + add_str)
-                raise PyCoqException("Coq", "Runtime exception occurred in Coq.")
+        if isinstance(state_ids, list):
+            if len(state_ids) > 0:
+                max_state_id = max(state_ids)
+                exec_result = self.exec(max_state_id)
+                if isinstance(exec_result, SerAnswerException):
+                    logger.error("@@@ " + add_str)
+                    raise PyCoqException("Coq", "Runtime exception occurred in Coq.")
 
-        return state_id
+        return state_ids
 
     def exec(self, stateid):
         result = self.execute_cmd("(Exec %d)" % stateid)
@@ -131,8 +142,8 @@ class CoqWorker:
 
         result = self.execute_cmd("(Query ((sid %d)) Goals)" % (stateid))
 
-        if isinstance(result, SerAnswerObjList):
-            return result.objects
+        if isinstance(result, list) and len(result) == 1 and isinstance(result[0], SerAnswerObjList):
+            return result[0].objects
         else:
             raise PyCoqException("Coq", "Query does not return object list.")
 

@@ -11,7 +11,7 @@ set_raw_send_receive_debug(True, True)
 
 w = CoqWorker()
 
-with open("/home/liyi/projects/coq-v8.7/theories/Arith/Compare_dec.v") as fin:
+with open("/home/liyi/projects/coq-v8.7/theories/Reals/Alembert.v") as fin:
     cache = ""
     for line in fin:
         # it is very import to remove all the endl chars, it may lead to weird behavior in serapi

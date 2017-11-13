@@ -18,10 +18,11 @@ class CoqGoal:
             if goal_set[0] == 'fg_goals':
                 self.fg_goals = list(map(lambda item: CoqGoalSingle(item), goal_set[1]))
             elif goal_set[0] == 'bg_goals':
-                self.bg_goals = list(map(
-                    lambda goals: [CoqGoalSingle(i) for i in goals],
-                    goal_set[1]
-                ))
+                # self.bg_goals = list(map(
+                #     lambda goals: [CoqGoalSingle(i) for i in goals],
+                #     goal_set[1]
+                # ))
+                pass
             elif goal_set[0] == 'shelved_goals':
                 self.shelved_goals = list(map(lambda item: CoqGoalSingle(item), goal_set[1]))
             elif goal_set[0] == 'given_up_goals':
@@ -54,7 +55,7 @@ class CoqGoalSingle:
     def __init__(self, obj_tuple):
         dict_tuple = dict(obj_tuple)
         if 'name' not in dict_tuple:
-            pass
+            print(dict_tuple)
         self.name = dict_tuple['name']
         self.type = CoqTerm.parse(dict_tuple['ty'])
         self.hypothesis = [CoqHypothesis(hyp) for hyp in dict_tuple['hyp']]
