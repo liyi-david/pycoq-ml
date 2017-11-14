@@ -130,10 +130,11 @@ class CoqTermInd(CoqTerm):
         CoqTerm.__init__(self, obj_tuple, parent)
         # print(obj_tuple)
         # FIXME other information
-        self.term = CoqTerm.parse(obj_tuple[1][0][0][3], self)
+        self.inductive = CoqElemInductive(obj_tuple[1][0])
+        self.univs = obj_tuple[1][1]
 
     def __str__(self):
-        return str(self.term)
+        return str(self.inductive)
 
 
 class CoqTermSort(CoqTerm):
@@ -264,7 +265,9 @@ class CoqTermConstruct(CoqTerm):
     identifier = "Construct"
 
     def __init__(self, obj_tuple, parent):
-        print(obj_tuple)
+        self.constructor = CoqElemConstructor(obj_tuple[1][0])
+        # todo parse univs
+        self.univs = obj_tuple[1][1]
         CoqTerm.__init__(self, obj_tuple, parent)
 
 
@@ -330,3 +333,21 @@ class CoqTermMeta(CoqTerm):
     def __init__(self, obj_tuple, parent):
         print(obj_tuple)
         CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqElemConstructor:
+    def __init__(self, obj_tuple):
+        self.inductive_type = CoqElemInductive(obj_tuple[0])
+        self.index = int(obj_tuple[1])
+
+
+class CoqElemInductive:
+    def __init__(self, obj_tuple):
+        self.mutind = CoqElemMutind(obj_tuple[0])
+        self.index = obj_tuple[1]
+
+
+class CoqElemMutind:
+    def __init__(self, obj_tuple):
+        assert obj_tuple[0] =='Mutind'
+        print(obj_tuple)

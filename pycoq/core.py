@@ -4,6 +4,8 @@ from pycoq.logger import logger
 from pycoq.serapi.response import *
 from pycoq.serapi.parser import *
 
+import sys
+sys.setrecursionlimit(1000000)
 
 class CoqWorker:
     def __init__(self):

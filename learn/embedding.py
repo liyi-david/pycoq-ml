@@ -1,8 +1,8 @@
 from pycoq.serapi.coqobj import *
 
 
-embedding_size = 10
-sentence_len = 30
+embedding_size = 100
+sentence_len = 50
 
 
 def term2seq(term):
@@ -16,7 +16,7 @@ def term2seq(term):
             '(',
             'forall',
             '_' if term.var_quantified is None else str(term.var_quantified)
-        ] + term2seq(term.type_quantified) + term2seq(term.term)
+        ] + term2seq(term.type_quantified) + term2seq(term.term) + [')']
     elif isinstance(term, CoqTermLambda):
         result = [
                  '(',
@@ -34,8 +34,6 @@ def embedding(word):
 
 def serialize(term):
     seq = term2seq(term)
-    if len(seq) > 20:
-        print(seq)
     assert len(seq) <= sentence_len
     return [embedding(seq[i] if i < len(seq) else []) for i in range(sentence_len)]
 
