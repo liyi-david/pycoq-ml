@@ -1,15 +1,10 @@
 from pycoq.core import CoqWorker
-from pycoq.core import set_raw_send_receive_debug, set_serapi_addr
 from pycoq.exception import PyCoqException
 from pycoq.serapi.coqobj import *
 
 import logging
 import os
 import re
-
-
-set_serapi_addr("/home/liyi/projects/coq-serapi/sertop.native")
-# set_raw_send_receive_debug(send=True, receive=True)
 
 
 def scan_files(lst_paths):
@@ -66,7 +61,15 @@ def reformat(coq_file):
     )
 
     for i in range(len(lines)):
-        lines[i] = lines[i].replace("Require", "From Coq Require")
+        if lines[i].startswith("Require"):
+            tokens = lines[i].split(' ')
+            if len(tokens) >= 3:
+                if not tokens[2].startswith("Coq."):
+                    lines[i] = lines[i].replace("Require", "From Coq Require")
+            elif len(tokens) >= 2:
+                if not tokens[1].startswith("Coq."):
+                    lines[i] = lines[i].replace("Require", "From Coq Require")
+
         lines[i] = lines[i].replace("__dot_dot__", "..")
         lines[i] = lines[i].replace("__dot__", ".")
         # print(lines[i])
@@ -74,7 +77,7 @@ def reformat(coq_file):
     return lines
 
 
-def scan(lst_paths):
+def scan(lst_paths, nonstop=True):
     files = scan_files(lst_paths)
     files_failed = 0
 
@@ -100,8 +103,10 @@ def scan(lst_paths):
                                         goals.append(obj.fg_goals[0])
                                 else:
                                     pass
-            except Exception:
+            except Exception as ex:
                 files_failed += 1
+                if not nonstop:
+                    raise ex
 
             del worker
 
@@ -109,3 +114,5 @@ def scan(lst_paths):
 
     print("%d failed in %d total." % (files_failed, len(files)))
     print("%d goals generated." % len(goals))
+
+    return goals

@@ -72,13 +72,13 @@ class CoqHypothesis:
         self.ids = list(map(lambda idv: idv[1], obj_tuple[0]))
         # FIXME parse the options
         self.options = obj_tuple[1]
-        self.term = CoqTerm.parse(obj_tuple[2])
+        self.type = CoqTerm.parse(obj_tuple[2])
         pass
 
     def __str__(self):
         return "%s : %s" % (
             " ".join(map(lambda id: str(id), self.ids)),
-            str(self.term)
+            str(self.type)
         )
 
 
@@ -142,7 +142,7 @@ class CoqTermSort(CoqTerm):
     def __init__(self, obj_tuple, parent):
         CoqTerm.__init__(self, obj_tuple, parent)
         self.type = obj_tuple[1][0]
-        assert  obj_tuple[1][1] == 'Null'
+        assert self.type in ['Prop', 'Type']
 
     def __str__(self):
         return self.type
@@ -260,8 +260,72 @@ class CoqTermLambda(CoqTerm):
             raise Exception("unhandled lambda str request")
 
 
-class CoqConstruct(CoqTerm):
+class CoqTermConstruct(CoqTerm):
     identifier = "Construct"
+
+    def __init__(self, obj_tuple, parent):
+        print(obj_tuple)
+        CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqTermCase(CoqTerm):
+    identifier = "Case"
+
+    def __init__(self, obj_tuple, parent):
+        print(obj_tuple)
+        CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqTermEvar(CoqTerm):
+    identifier = "Evar"
+
+    def __init__(self, obj_tuple, parent):
+        print(obj_tuple)
+        CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqTermLetIn(CoqTerm):
+    identifier = "LetIn"
+
+    def __init__(self, obj_tuple, parent):
+        print(obj_tuple)
+        CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqTermCast(CoqTerm):
+    identifier = "Cast"
+
+    def __init__(self, obj_tuple, parent):
+        print(obj_tuple)
+        CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqTermFix(CoqTerm):
+    identifier = "Fix"
+
+    def __init__(self, obj_tuple, parent):
+        print(obj_tuple)
+        CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqTermCoFix(CoqTerm):
+    identifier = "CoFix"
+
+    def __init__(self, obj_tuple, parent):
+        print(obj_tuple)
+        CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqTermProj(CoqTerm):
+    identifier = "Proj"
+
+    def __init__(self, obj_tuple, parent):
+        print(obj_tuple)
+        CoqTerm.__init__(self, obj_tuple, parent)
+
+
+class CoqTermMeta(CoqTerm):
+    identifier = "Meta"
 
     def __init__(self, obj_tuple, parent):
         print(obj_tuple)
