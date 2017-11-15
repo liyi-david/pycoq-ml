@@ -9,7 +9,7 @@ def term2seq(term):
     assert isinstance(term, CoqTerm)
     result = []
 
-    if type(term) in [CoqTermRel, CoqTermVar, CoqTermId, CoqTermSort, CoqTermInd]:
+    if type(term) in [CoqTermRel, CoqTermVar, CoqTermSort, CoqTermInd]:
         result = [str(term)]
     elif isinstance(term, CoqTermProd):
         result = [

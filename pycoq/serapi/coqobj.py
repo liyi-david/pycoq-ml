@@ -1,5 +1,5 @@
 # TODO from coq object to string (especially, should be able sent directly into coq)
-
+from pycoq.serapi.coqelem import *
 
 def coq_obj_parse(obj_tuple):
     if obj_tuple[0] == 'CoqGoal':
@@ -99,17 +99,6 @@ class CoqTerm:
         raise Exception("unhandled coq term type %s" % obj_tuple[0])
 
 
-class CoqTermId(CoqTerm):
-    identifier = "Id"
-
-    def __init__(self, obj_tuple, parent):
-        CoqTerm.__init__(self, obj_tuple, parent)
-        self.id = obj_tuple[1]
-
-    def __str__(self):
-        return self.id
-
-
 class CoqTermConst(CoqTerm):
     identifier = "Const"
 
@@ -117,10 +106,11 @@ class CoqTermConst(CoqTerm):
         CoqTerm.__init__(self, obj_tuple, parent)
 
         # FIXME other fields are simply ignored
-        self.term = CoqTerm.parse(obj_tuple[1][0][3], self)
+        self.constant = CoqElemConstant(obj_tuple[1][0])
+        self.univs = obj_tuple[1][1]
 
     def __str__(self):
-        return str(self.term)
+        return str(self.constant)
 
 
 class CoqTermInd(CoqTerm):
@@ -186,7 +176,7 @@ class CoqTermVar(CoqTerm):
 
     def __init__(self, obj_tuple, parent):
         CoqTerm.__init__(self, obj_tuple, parent)
-        self.id = CoqTerm.parse(obj_tuple[1], self)
+        self.id = CoqElemId(obj_tuple[1])
 
     def __str__(self):
         return str(self.id)
@@ -216,7 +206,7 @@ class CoqTermProd(CoqTerm):
         if obj_tuple[1] == 'Anonymous':
             self.var_quantified = None
         elif obj_tuple[1][0] == 'Name':
-            self.var_quantified = CoqTerm.parse(obj_tuple[1][1], self)
+            self.var_quantified = CoqElemId(obj_tuple[1][1])
         else:
             raise Exception("unrecognized prod quantified variable %s" % obj_tuple[1])
 
@@ -243,7 +233,7 @@ class CoqTermLambda(CoqTerm):
         if obj_tuple[1] == 'Anonymous':
             self.name_arg = None
         elif obj_tuple[1][0] == 'Name':
-            self.name_arg = CoqTerm.parse(obj_tuple[1][1], self)
+            self.name_arg = CoqElemId(obj_tuple[1][1])
         else:
             raise Exception("unrecognized lambda arg variable %s" % obj_tuple[1])
 
@@ -251,14 +241,11 @@ class CoqTermLambda(CoqTerm):
         self.term = CoqTerm.parse(obj_tuple[3], self)
 
     def __str__(self):
-        if self.name_arg is not None:
-            return "exists %s:%s, %s" % (
-                self.name_arg,
-                self.type_arg,
-                self.term
-            )
-        else:
-            raise Exception("unhandled lambda str request")
+        return "exists %s:%s, %s" % (
+            self.name_arg if self.name_arg is not None else "_",
+            self.type_arg,
+            self.term
+        )
 
 
 class CoqTermConstruct(CoqTerm):
@@ -275,8 +262,16 @@ class CoqTermCase(CoqTerm):
     identifier = "Case"
 
     def __init__(self, obj_tuple, parent):
-        print(obj_tuple)
         CoqTerm.__init__(self, obj_tuple, parent)
+        self.case_info = dict(obj_tuple[1])
+        self.inductive = CoqElemInductive(self.case_info['ci_ind'])
+        # todo how matched and returned are used?
+        self.matched = CoqTerm.parse(obj_tuple[3], self)
+        self.returned = CoqTerm.parse(obj_tuple[2], self)
+        self.cases = [CoqTerm.parse(item, self) for item in obj_tuple[4]]
+
+        # TODO
+        print(obj_tuple)
 
 
 class CoqTermEvar(CoqTerm):
@@ -333,21 +328,3 @@ class CoqTermMeta(CoqTerm):
     def __init__(self, obj_tuple, parent):
         print(obj_tuple)
         CoqTerm.__init__(self, obj_tuple, parent)
-
-
-class CoqElemConstructor:
-    def __init__(self, obj_tuple):
-        self.inductive_type = CoqElemInductive(obj_tuple[0])
-        self.index = int(obj_tuple[1])
-
-
-class CoqElemInductive:
-    def __init__(self, obj_tuple):
-        self.mutind = CoqElemMutind(obj_tuple[0])
-        self.index = obj_tuple[1]
-
-
-class CoqElemMutind:
-    def __init__(self, obj_tuple):
-        assert obj_tuple[0] =='Mutind'
-        print(obj_tuple)

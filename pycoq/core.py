@@ -88,7 +88,7 @@ class CoqWorker:
         assert isinstance(add_opts, dict)
         assert isinstance(add_str, str)
 
-        state_ids = []
+        answers = []
 
         # PATCHES
         # if add_str.strip().startswith("Require"):
@@ -105,26 +105,26 @@ class CoqWorker:
         if isinstance(result, list):
             for answer in result:
                 if isinstance(answer, SerAnswerAdded):
-                    state_ids.append(answer.state_id)
+                    answers.append(answer)
                 elif isinstance(answer, SerAnswerException):
                     raise PyCoqException("ADD", "fail to add coq item.")
         else:
             raise PyCoqException("ADD", "unknown result %s" % type(result))
 
-        return state_ids
+        return answers
 
     def add_and_execute_raw(self, add_str, add_opts={}):
-        state_ids = self.add_raw(add_str, add_opts)
+        answers = self.add_raw(add_str, add_opts)
 
-        if isinstance(state_ids, list):
-            if len(state_ids) > 0:
-                max_state_id = max(state_ids)
+        if isinstance(answers, list):
+            if len(answers) > 0:
+                max_state_id = max(list(map(lambda ans: ans.state_id, answers)))
                 exec_result = self.exec(max_state_id)
                 if isinstance(exec_result, SerAnswerException):
                     logger.error("@@@ " + add_str)
                     raise PyCoqException("Coq", "Runtime exception occurred in Coq.")
 
-        return state_ids
+        return answers
 
     def exec(self, stateid):
         result = self.execute_cmd("(Exec %d)" % stateid)

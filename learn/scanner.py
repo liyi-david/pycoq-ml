@@ -82,6 +82,8 @@ def scan(lst_paths, nonstop=True):
     files_failed = 0
 
     goals = []
+    tactics = []
+    last_goal = None
 
     for file in files:
         print(file)
@@ -91,16 +93,27 @@ def scan(lst_paths, nonstop=True):
             worker = CoqWorker()
             try:
                 for code in coqcodes:
-                    state_ids = worker.add_and_execute_raw(code)
-                    if isinstance(state_ids, list):
-                        for state_id in state_ids:
-                            objlist = worker.query_goals(state_id)
+
+                    # FIXME
+                    if code == "simpl." and coqcodes[coqcodes.index(code) + 1] == "split.":
+                        print("DEBUG")
+
+                    answers = worker.add_and_execute_raw(code)
+                    if isinstance(answers, list):
+                        for answer in answers:
+                            objlist = worker.query_goals(answer.state_id)
+                            current_tactic = answer.get_tactic_name(code)
                             # TODO
                             for obj in objlist:
                                 if isinstance(obj, CoqGoal):
+                                    if last_goal is not None and current_tactic != "Proof":
+                                        # generate data set
+                                        goals.append(last_goal)
+                                        tactics.append(current_tactic)
+
                                     if len(obj.fg_goals) > 0:
                                         # only the current working goal is chosen
-                                        goals.append(obj.fg_goals[0])
+                                        last_goal = obj.fg_goals[0]
                                 else:
                                     pass
             except Exception as ex:
@@ -115,4 +128,4 @@ def scan(lst_paths, nonstop=True):
     print("%d failed in %d total." % (files_failed, len(files)))
     print("%d goals generated." % len(goals))
 
-    return goals
+    return goals, tactics

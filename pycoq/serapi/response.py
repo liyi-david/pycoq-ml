@@ -57,8 +57,19 @@ class SerAnswerAdded(SerAnswer):
 
     def __init__(self, answered_tag, answer_kind):
         self.state_id = int(answer_kind[1])
+        self.info = dict(answer_kind[2])
         # TODO Loc.t && ...
         SerAnswer.__init__(self, answered_tag, answer_kind)
+
+    def get_cmd(self, string):
+        bp = int(self.info['bp'])
+        ep = int(self.info['ep'])
+
+        return string[bp:ep - 1]
+
+    def get_tactic_name(self, string):
+        return self.get_cmd(string).split(' ')[0]
+
 
 
 class SerAnswerException(SerAnswer):
