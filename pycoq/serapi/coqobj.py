@@ -98,6 +98,9 @@ class CoqTerm:
 
         raise Exception("unhandled coq term type %s" % obj_tuple[0])
 
+    def __str__(self):
+        return ""
+
 
 class CoqTermId(CoqTerm):
     identifier = "Id"
@@ -346,8 +349,20 @@ class CoqElemInductive:
         self.mutind = CoqElemMutind(obj_tuple[0])
         self.index = obj_tuple[1]
 
+    def __str__(self):
+        return str(self.mutind) + "_" + str(self.index)
+
 
 class CoqElemMutind:
     def __init__(self, obj_tuple):
+        """
+        refer to coq github repo at kernel/names.mli, line 392 - 407
+        :param obj_tuple:
+        """
         assert obj_tuple[0] =='Mutind'
-        print(obj_tuple)
+        # obj_tuple[1] is ModPath
+        # obj_tuple[2] is DirPath
+        self.id = CoqTerm.parse(obj_tuple[3], self)
+
+    def __str__(self):
+        return str(self.id)

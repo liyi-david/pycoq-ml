@@ -9,22 +9,27 @@ def term2seq(term):
     assert isinstance(term, CoqTerm)
     result = []
 
-    if type(term) in [CoqTermRel, CoqTermVar, CoqTermId, CoqTermSort, CoqTermInd]:
+    if type(term) in [CoqTermRel, CoqTermVar, CoqTermId, CoqTermSort, CoqTermInd, CoqTermConst]:
         result = [str(term)]
+        return result
     elif isinstance(term, CoqTermProd):
         result = [
-            '(',
             'forall',
             '_' if term.var_quantified is None else str(term.var_quantified)
-        ] + term2seq(term.type_quantified) + term2seq(term.term) + [')']
+        ] + term2seq(term.type_quantified) + term2seq(term.term)
     elif isinstance(term, CoqTermLambda):
         result = [
-                 '(',
                  'exists',
                  '_' if term.name_arg is None else str(term.name_arg)
              ] + term2seq(term.type_arg) + term2seq(term.term)
+    elif isinstance(term, CoqTermApp):
+        result = term2seq(term.function)
+        for arg in term.args:
+            result += term2seq(arg)
+    else:
+        result = ["TODO"]
 
-    return result
+    return ["("] + result + [")"]
 
 
 def embedding(word):

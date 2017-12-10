@@ -5,6 +5,7 @@ from pycoq.serapi.coqobj import *
 import logging
 import os
 import re
+import gc
 
 
 def scan_files(lst_paths):
@@ -78,10 +79,18 @@ def reformat(coq_file):
 
 
 def scan(lst_paths, nonstop=True):
+    """
+    scans all files in *lst_paths* and its sub-paths, runs them in Coq, and
+    extract all the training data (including goal & tactic)
+    :param lst_paths:
+    :param nonstop:
+    :return: training dataset
+    """
     files = scan_files(lst_paths)
     files_failed = 0
 
     goals = []
+    commands = []
 
     for file in files:
         print(file)
@@ -91,18 +100,20 @@ def scan(lst_paths, nonstop=True):
             worker = CoqWorker()
             try:
                 for code in coqcodes:
-                    state_ids = worker.add_and_execute_raw(code)
+                    state_ids, cmds = worker.add_and_execute_raw(code)
                     if isinstance(state_ids, list):
                         for state_id in state_ids:
                             objlist = worker.query_goals(state_id)
-                            # TODO
-                            for obj in objlist:
-                                if isinstance(obj, CoqGoal):
-                                    if len(obj.fg_goals) > 0:
-                                        # only the current working goal is chosen
-                                        goals.append(obj.fg_goals[0])
-                                else:
-                                    pass
+
+                            # store the command used
+                            assert(len(objlist) <= 1)
+                            if len(objlist) == 1 and isinstance(objlist[0], CoqGoal) and len(objlist[0].fg_goals) > 0:
+                                goals.append(objlist[0].fg_goals[0])
+                            else:
+                                # for each sid, we put a goal in this array
+                                goals.append(None)
+
+                            commands.append(cmds[state_ids.index(state_id)])
             except Exception as ex:
                 files_failed += 1
                 if not nonstop:
@@ -110,9 +121,18 @@ def scan(lst_paths, nonstop=True):
 
             del worker
 
+        gc.collect()
+
         # break
+
+    # filter the valid tactics and goals
+    selected_goals, tactics = [], []
+    for i in range(len(goals)):
+        if goals[i] is not None and commands[i + 1][0].islower():
+            selected_goals.append(goals[i])
+            tactics.append(commands[i + 1])
 
     print("%d failed in %d total." % (files_failed, len(files)))
     print("%d goals generated." % len(goals))
 
-    return goals
+    return selected_goals, tactics

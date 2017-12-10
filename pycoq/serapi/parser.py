@@ -3,6 +3,12 @@ class ScanningMode:
     STRING = 1
 
 
+def tokens2str(tokens):
+    if isinstance(tokens, list):
+        return "(" + " ".join(map(lambda t: tokens2str(t), tokens)) + ")"
+    else:
+        return str(tokens)
+
 def get_tokens(string):
     tokens = []
     spaces = [' ', "\t", "\n"]

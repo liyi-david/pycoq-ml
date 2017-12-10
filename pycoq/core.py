@@ -7,7 +7,11 @@ from pycoq.serapi.parser import *
 import sys
 sys.setrecursionlimit(1000000)
 
+
 class CoqWorker:
+    """
+    interact with Coq through Serapi
+    """
     def __init__(self):
         serapi_addr = get_serapi_addr()
         coq_addr = get_coq_addr()
@@ -50,6 +54,7 @@ class CoqWorker:
         # write command
         if raw_send_flag:
             logger.debug("<<< " + cmd)
+
         self.subprocess.stdin.write((cmd + "\n").encode(encoding="utf-8"))
         self.subprocess.stdin.flush()
 
@@ -89,6 +94,7 @@ class CoqWorker:
         assert isinstance(add_str, str)
 
         state_ids = []
+        cmds = []
 
         # PATCHES
         # if add_str.strip().startswith("Require"):
@@ -106,15 +112,17 @@ class CoqWorker:
             for answer in result:
                 if isinstance(answer, SerAnswerAdded):
                     state_ids.append(answer.state_id)
+                    cmds.append(answer.getCommand(add_str))
                 elif isinstance(answer, SerAnswerException):
                     raise PyCoqException("ADD", "fail to add coq item.")
         else:
             raise PyCoqException("ADD", "unknown result %s" % type(result))
 
-        return state_ids
+        assert len(cmds) == len(state_ids)
+        return state_ids, cmds
 
     def add_and_execute_raw(self, add_str, add_opts={}):
-        state_ids = self.add_raw(add_str, add_opts)
+        state_ids, cmds = self.add_raw(add_str, add_opts)
 
         if isinstance(state_ids, list):
             if len(state_ids) > 0:
@@ -124,7 +132,7 @@ class CoqWorker:
                     logger.error("@@@ " + add_str)
                     raise PyCoqException("Coq", "Runtime exception occurred in Coq.")
 
-        return state_ids
+        return state_ids, cmds
 
     def exec(self, stateid):
         result = self.execute_cmd("(Exec %d)" % stateid)
@@ -148,6 +156,14 @@ class CoqWorker:
             return result[0].objects
         else:
             raise PyCoqException("Coq", "Query does not return object list.")
+
+    def print_coqobj(self, obj):
+        """
+        render a coq object
+        :param obj: a coq object in form of string
+        :return:
+        """
+        print(self.execute_cmd("(Print () %s)" % tokens2str(obj)))
 
     def quit(self):
         return self.execute_cmd("Quit")
