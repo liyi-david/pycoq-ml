@@ -1,8 +1,8 @@
-Definition T : Type := forall A B : Prop, A -> (B -> A).
+Parameter A:Prop.
 
-Goal forall a b:nat, T.
+Goal forall a:nat, (match a with 0 => 1 | S _ => 0 end) >= 0.
 Proof.
-    intros.
-    unfold T.
-    tauto.
+    intro a.
+    induction a.
+    auto. eauto.
 Qed.
