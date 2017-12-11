@@ -1,6 +1,5 @@
 from pycoq.serapi.coqobj import *
 
-
 word_size = 20
 sentence_len = 256
 
@@ -39,7 +38,11 @@ def embedding(word):
 
 def serialize(seq):
     assert len(seq) <= sentence_len
-    return [embedding(seq[i] if i < len(seq) else []) for i in range(sentence_len)]
+    result = []
+    for i in range(sentence_len):
+        result += embedding(seq[i] if i < len(seq) else [])
+
+    return result
 
 
 def vec2text(vec):

@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import gc
+import psutil
 
 
 def scan_files(lst_paths):
@@ -94,6 +95,12 @@ def scan(lst_paths, nonstop=True):
 
     for file in files:
         print(file)
+        info = psutil.virtual_memory()
+        if info.percent > 90:
+            print("Memory is going to overflow, stop scanning.")
+            break
+
+        # if memory is filled then exitw
         with open(file, 'r') as f:
             coqcodes = reformat(f)
 

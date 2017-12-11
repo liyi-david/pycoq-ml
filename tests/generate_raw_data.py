@@ -11,9 +11,14 @@ set_serapi_addr("/home/liyi/projects/coq-serapi/sertop.native")
 # set_raw_send_receive_debug(send=True, receive=True)
 
 # goals = scan(["/home/liyi/projects/coq-v8.7/theories/Logic/FinFun.v"])
-goals, tactics = scan(["/home/liyi/projects/coq-v8.7/theories/ZArith"], nonstop=False)
+goals, tactics = scan(
+    [
+        "/home/liyi/projects/coq-v8.7/theories/ZArith",
+        "/home/liyi/projects/coq-v8.7/theories/Arith",
+        "/home/liyi/projects/coq-v8.7/theories/Bool",
+        "/home/liyi/projects/coq-v8.7/theories/Logic"
+    ],
+    nonstop=False
+)
 # goals, tactics = scan(["/home/liyi/projects/coq-v8.7/theories/ZArith/ZArith_dec.v"], nonstop=False)
 render_natural(goals, tactics, filename='raw_ds.txt')
-
-goals, tactics = scan("../db/reo.v")
-render_natural(goals, tactics, filename='reo_ds.txt')
