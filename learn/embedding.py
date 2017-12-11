@@ -1,8 +1,8 @@
 from pycoq.serapi.coqobj import *
 
 
-embedding_size = 100
-sentence_len = 50
+word_size = 20
+sentence_len = 256
 
 
 def term2seq(term):
@@ -33,12 +33,11 @@ def term2seq(term):
 
 
 def embedding(word):
-    assert len(word) <= embedding_size
-    return [ord(word[i]) if i < len(word) else 0 for i in range(embedding_size)]
+    assert len(word) <= word_size
+    return [ord(word[i]) if i < len(word) else 0 for i in range(word_size)]
 
 
-def serialize(term):
-    seq = term2seq(term)
+def serialize(seq):
     assert len(seq) <= sentence_len
     return [embedding(seq[i] if i < len(seq) else []) for i in range(sentence_len)]
 
