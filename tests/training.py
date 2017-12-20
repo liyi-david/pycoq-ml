@@ -10,22 +10,22 @@ _num_test = None
 _batch_size = 50
 
 _num_lstm_layers = 4
-_num_hidden = 512
+_num_hidden = 1024
 
 mode = 'reoonly'
 
 if mode == 'reoonly':
     train_set_X, train_set_Y = load_dataset('reo_ds.txt', _num_train)
-    test_set_X = train_set_X[-50:]
-    test_set_Y = train_set_Y[-50:]
-    train_set_X = train_set_X[:-50]
-    train_set_Y = train_set_Y[:-50]
+    test_set_X = train_set_X[-20:]
+    test_set_Y = train_set_Y[-20:]
+    train_set_X = train_set_X[:-20]
+    train_set_Y = train_set_Y[:-20]
 
     _num_hidden = 1024
     _num_lstm_layers = 3
 
     _batch_size = 20
-    _epochs = 30
+    _epochs = 60
 elif mode == 'coqonly':
     _num_train = 2000
 

@@ -22,13 +22,14 @@ def term2seq(term):
                  '_' if term.name_arg is None else str(term.name_arg)
              ] + term2seq(term.type_arg) + term2seq(term.term)
     elif isinstance(term, CoqTermApp):
-        result = term2seq(term.function)
+        result = ["apply"]
+        result += term2seq(term.function)
         for arg in term.args:
             result += term2seq(arg)
     else:
         result = ["TODO"]
 
-    return ["("] + result + [")"]
+    return result[::-1]
 
 
 def embedding(word):
